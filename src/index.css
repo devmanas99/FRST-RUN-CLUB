@@ -1,0 +1,482 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Barlow Condensed', sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+
+    /* Light Theme (Default) */
+    --bg: #F7F5F0;
+    --card: #FFFFFF;
+    --text: #1B1B1B;
+    --muted: #5F5B54;
+    --divider: #E2DDD3;
+    --accent: #C8372D;
+    --on-accent: #FFFFFF;
+    --dark-bg: #1B1B1B;
+    --dark-text: #F7F5F0;
+    --dark-muted: #B8B3A8;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141312;
+      --card: #1D1C1A;
+      --text: #F3EFE8;
+      --muted: #A9A399;
+      --divider: #2E2B27;
+      --accent: #E4584D;
+      --on-accent: #141312;
+      --dark-bg: #1D1C1A;
+      --dark-text: #F3EFE8;
+      --dark-muted: #A9A399;
+    }
+  }
+
+  html.dark {
+    --bg: #141312;
+    --card: #1D1C1A;
+    --text: #F3EFE8;
+    --muted: #A9A399;
+    --divider: #2E2B27;
+    --accent: #E4584D;
+    --on-accent: #141312;
+    --dark-bg: #1D1C1A;
+    --dark-text: #F3EFE8;
+    --dark-muted: #A9A399;
+  }
+
+  html.light {
+    --bg: #F7F5F0;
+    --card: #FFFFFF;
+    --text: #1B1B1B;
+    --muted: #5F5B54;
+    --divider: #E2DDD3;
+    --accent: #C8372D;
+    --on-accent: #FFFFFF;
+    --dark-bg: #1B1B1B;
+    --dark-text: #F7F5F0;
+    --dark-muted: #B8B3A8;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+}
+
+/* Headings: Barlow Condensed 700, uppercase, max 34px (home headline may be 46px) */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* Small labels: 12px, uppercase, letter-spacing .12em, muted colour */
+.font-mono-label,
+.label-sm {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.text-small {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Cards: white/dark card background with a 1px divider-colour border and 14px corners.
+   No hard shadows, no offset shadows, no sticker tilts, no thick borders. */
+.club-card {
+  background-color: var(--card);
+  color: var(--text);
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+}
+
+/* Dark section: background #1B1B1B, text #F7F5F0 */
+.dark-section {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+}
+
+/* Buttons: 48px tall, 10px corners, solid accent for main action and outlined for secondary */
+.btn-primary {
+  height: 48px;
+  border-radius: 10px;
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  transition: opacity 150ms ease, transform 150ms ease;
+  cursor: pointer;
+}
+
+.btn-primary:active {
+  transform: scale(0.99);
+  opacity: 0.92;
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  height: 48px;
+  border-radius: 10px;
+  background-color: var(--card);
+  color: var(--text);
+  border: 1px solid var(--divider);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  transition: opacity 150ms ease, transform 150ms ease;
+  cursor: pointer;
+}
+
+.btn-secondary:active {
+  transform: scale(0.99);
+  opacity: 0.85;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-secondary-sm {
+  height: 38px;
+  border-radius: 10px;
+  background-color: var(--card);
+  color: var(--text);
+  border: 1px solid var(--divider);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  transition: opacity 150ms ease, transform 150ms ease;
+  cursor: pointer;
+}
+
+.club-input {
+  background-color: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+}
+
+.club-input::placeholder {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.club-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Gentle Motion:
+   Sections fade up 14px as they enter (500ms).
+   Leaderboard rows appear one after another, 40ms apart.
+   Doodles draw themselves once (stroke-dashoffset, ~1 second). */
+@keyframes pageFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: pageFadeSlide 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes sectionFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-reveal-hidden {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.section-reveal-visible {
+  animation: sectionFadeUp 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes doodleDraw {
+  from {
+    stroke-dashoffset: 100;
+    opacity: 0.25;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.doodle-path-pending {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0.25;
+}
+
+.doodle-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  animation: doodleDraw 1000ms ease-out both;
+}
+
+@keyframes tickerMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: tickerMarquee 26s linear infinite;
+}
+
+.animate-ticker-paused {
+  animation-play-state: paused !important;
+}
+
+@keyframes rowSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-row-slide {
+  animation: rowSlideIn 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 1.8s ease-out infinite;
+}
+
+/* Motion Graphics Collab Slide Keyframes
+   Animate ONLY transform, opacity, and stroke-dashoffset.
+   Total entrance finishes under 1.2s (1120ms). */
+@keyframes collabSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes collabSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes collabDrawStroke {
+  from {
+    stroke-dashoffset: 100;
+    opacity: 0.2;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes collabAmbientFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes collabProgressScale {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.collab-enter-left {
+  animation: collabSlideInLeft 460ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both;
+}
+
+.collab-enter-right {
+  animation: collabSlideInRight 460ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+
+.collab-enter-x {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: collabDrawStroke 400ms ease-out 340ms both;
+}
+
+.collab-enter-underline {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: collabDrawStroke 440ms ease-out 660ms both;
+}
+
+.collab-hidden-left {
+  opacity: 0;
+  transform: translateX(-22px);
+}
+
+.collab-hidden-right {
+  opacity: 0;
+  transform: translateX(22px);
+}
+
+.collab-hidden-stroke {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0.2;
+}
+
+.collab-float-1 {
+  animation: collabAmbientFloat 4s ease-in-out infinite;
+}
+
+.collab-float-2 {
+  animation: collabAmbientFloat 4s ease-in-out 1.3s infinite;
+}
+
+.collab-float-3 {
+  animation: collabAmbientFloat 4s ease-in-out 2.6s infinite;
+}
+
+.collab-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerMarquee 22s linear infinite;
+}
+
+.collab-progress-bar {
+  transform-origin: left center;
+  animation: collabProgressScale 6000ms linear forwards;
+}
+
+.collab-paused {
+  animation-play-state: paused !important;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-ticker,
+  .animate-pulse-ring,
+  .animate-page-enter,
+  .section-reveal-hidden,
+  .section-reveal-visible,
+  .animate-row-slide,
+  .doodle-path,
+  .doodle-path-pending,
+  .collab-enter-left,
+  .collab-enter-right,
+  .collab-enter-x,
+  .collab-enter-underline,
+  .collab-hidden-left,
+  .collab-hidden-right,
+  .collab-hidden-stroke,
+  .collab-float-1,
+  .collab-float-2,
+  .collab-float-3,
+  .collab-ticker-track,
+  .collab-progress-bar {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

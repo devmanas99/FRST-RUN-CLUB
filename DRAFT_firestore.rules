@@ -1,0 +1,415 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Hardened Helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Admins are set ONLY manually in the Firebase console on /users/{uid}.role == 'admin'
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Validation Blueprint: User Profile (bio max 120 chars, city default Rewa, no PII)
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'bio', 'photoURL', 'role', 'createdAt', 'showPublicly']) &&
+        data.keys().hasOnly(['displayName', 'bio', 'photoURL', 'bannerURL', 'city', 'role', 'createdAt', 'showPublicly']) &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+        data.bio is string && data.bio.size() <= 120 &&
+        data.photoURL is string && data.photoURL.size() <= 1000 &&
+        (!('bannerURL' in data) || (data.bannerURL is string && data.bannerURL.size() <= 1000)) &&
+        (!('city' in data) || (data.city is string && data.city.size() >= 1 && data.city.size() <= 60)) &&
+        data.role is string && data.role.size() <= 20 && (data.role == 'runner' || data.role == 'admin') &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40 &&
+        data.showPublicly is bool;
+    }
+
+    // Validation Blueprint: Run Entry (no GPS route coordinates)
+    function isValidRun(data) {
+      return data.keys().hasAll(['uid', 'date', 'km', 'type', 'addedBy', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'date', 'km', 'type', 'addedBy', 'createdAt', 'status', 'durationSeconds', 'flagged', 'flagReason']) &&
+        isValidId(data.uid) &&
+        data.date is string && data.date.size() == 10 &&
+        (data.km is int || data.km is float) && data.km > 0 && data.km <= 500 &&
+        data.type is string && data.type.size() <= 20 && (data.type == 'Club run' || data.type == 'Personal') &&
+        isValidId(data.addedBy) &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40 &&
+        (!('status' in data) || (data.status is string && data.status.size() <= 20 && (data.status == 'pending' || data.status == 'approved' || data.status == 'rejected'))) &&
+        (!('durationSeconds' in data) || ((data.durationSeconds is int || data.durationSeconds is float) && data.durationSeconds >= 0 && data.durationSeconds <= 864000)) &&
+        (!('flagged' in data) || data.flagged is bool) &&
+        (!('flagReason' in data) || (data.flagReason is string && data.flagReason.size() <= 120));
+    }
+
+    // Validation Blueprint: Club Event (with rich details, activities, special mention, safety note, feeText, city, featured)
+    function isValidEvent(data) {
+      return data.keys().hasAll(['title', 'date', 'time', 'venue', 'distanceKm', 'fee', 'perks', 'registrationUrl']) &&
+        data.keys().hasOnly([
+          'title', 'date', 'time', 'venue', 'venueName', 'venueMapUrl', 'bannerUrl',
+          'intro', 'mainRunLabel', 'activities', 'specialMentionTitle', 'specialMentionText',
+          'specialMentionLogoUrl', 'safetyNote', 'feeText', 'featured', 'city',
+          'distanceKm', 'fee', 'perks', 'registrationUrl', 'status', 'description'
+        ]) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+        data.date is string && data.date.size() == 10 &&
+        data.time is string && data.time.size() >= 1 && data.time.size() <= 30 &&
+        data.venue is string && data.venue.size() >= 1 && data.venue.size() <= 160 &&
+        (!('venueName' in data) || (data.venueName is string && data.venueName.size() <= 160)) &&
+        (!('venueMapUrl' in data) || (data.venueMapUrl is string && data.venueMapUrl.size() <= 500)) &&
+        (!('bannerUrl' in data) || (data.bannerUrl is string && data.bannerUrl.size() <= 1000)) &&
+        (!('intro' in data) || (data.intro is string && data.intro.size() <= 240)) &&
+        (!('mainRunLabel' in data) || (data.mainRunLabel is string && data.mainRunLabel.size() <= 100)) &&
+        (!('activities' in data) || (data.activities is list && data.activities.size() <= 20 && (data.activities.size() == 0 || (data.activities[0] is map && data.activities[0].keys().hasAll(['name']) && data.activities[0].keys().hasOnly(['name', 'detail']) && data.activities[0].name is string && data.activities[0].name.size() >= 1 && data.activities[0].name.size() <= 100 && (!('detail' in data.activities[0]) || (data.activities[0].detail is string && data.activities[0].detail.size() <= 160)))))) &&
+        (!('specialMentionTitle' in data) || (data.specialMentionTitle is string && data.specialMentionTitle.size() <= 100)) &&
+        (!('specialMentionText' in data) || (data.specialMentionText is string && data.specialMentionText.size() <= 300)) &&
+        (!('specialMentionLogoUrl' in data) || (data.specialMentionLogoUrl is string && data.specialMentionLogoUrl.size() <= 1000)) &&
+        (!('safetyNote' in data) || (data.safetyNote is string && data.safetyNote.size() <= 300)) &&
+        (!('feeText' in data) || (data.feeText is string && data.feeText.size() <= 100)) &&
+        (!('featured' in data) || data.featured is bool) &&
+        (!('city' in data) || (data.city is string && data.city.size() >= 1 && data.city.size() <= 60)) &&
+        (data.distanceKm is int || data.distanceKm is float) && data.distanceKm > 0 && data.distanceKm <= 200 &&
+        data.fee is map &&
+        data.fee.keys().hasAll(['male', 'female', 'couple']) &&
+        data.fee.keys().hasOnly(['male', 'female', 'couple']) &&
+        (data.fee.male is int || data.fee.male is float) && data.fee.male >= 0 && data.fee.male <= 50000 &&
+        (data.fee.female is int || data.fee.female is float) && data.fee.female >= 0 && data.fee.female <= 50000 &&
+        (data.fee.couple is int || data.fee.couple is float) && data.fee.couple >= 0 && data.fee.couple <= 50000 &&
+        data.perks is list && data.perks.size() <= 25 &&
+        (data.perks.size() == 0 || (data.perks[0] is string && data.perks[0].size() <= 80)) &&
+        data.registrationUrl is string && data.registrationUrl.size() <= 500 &&
+        (!('status' in data) || (data.status is string && data.status.size() <= 20 && (data.status == 'upcoming' || data.status == 'past' || data.status == 'cancelled'))) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 500));
+    }
+
+    // Validation Blueprint: Collaboration Slide Entry
+    function isValidCollab(data) {
+      return data.keys().hasAll(['partnerName', 'title', 'active', 'order', 'createdAt']) &&
+        data.keys().hasOnly(['partnerName', 'logoUrl', 'title', 'dateLabel', 'active', 'order', 'createdAt']) &&
+        data.partnerName is string && data.partnerName.size() >= 1 && data.partnerName.size() <= 80 &&
+        (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 1000)) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+        (!('dateLabel' in data) || (data.dateLabel is string && data.dateLabel.size() <= 60)) &&
+        data.active is bool &&
+        (data.order is int || data.order is float) && data.order >= 0 && data.order <= 999 &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40;
+    }
+
+    // Validation Blueprint: Club Announcement (max 200 characters)
+    function isValidAnnouncement(data) {
+      return data.keys().hasAll(['text', 'pinned', 'createdAt', 'createdBy']) &&
+        data.keys().hasOnly(['text', 'pinned', 'createdAt', 'createdBy']) &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 200 &&
+        data.pinned is bool &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40 &&
+        isValidId(data.createdBy);
+    }
+
+    // Validation Blueprint: VoiceQuote
+    function isValidVoice(data) {
+      return data.keys().hasAll(['quote', 'runnerName', 'createdAt']) &&
+        data.keys().hasOnly(['quote', 'runnerName', 'tag', 'createdAt']) &&
+        data.quote is string && data.quote.size() >= 1 && data.quote.size() <= 240 &&
+        data.runnerName is string && data.runnerName.size() >= 1 && data.runnerName.size() <= 80 &&
+        (!('tag' in data) || (data.tag is string && data.tag.size() <= 60)) &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40;
+    }
+
+    // Validation Blueprint: MemoryAlbum
+    function isValidMemory(data) {
+      return data.keys().hasAll(['title', 'date', 'coverPhoto', 'link', 'createdAt']) &&
+        data.keys().hasOnly(['title', 'date', 'coverPhoto', 'link', 'createdAt']) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+        data.date is string && data.date.size() == 10 &&
+        data.coverPhoto is string && data.coverPhoto.size() >= 1 && data.coverPhoto.size() <= 500 &&
+        data.link is string && data.link.size() >= 1 && data.link.size() <= 500 &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40;
+    }
+
+    // Validation Blueprint: PartnerEntry
+    function isValidPartner(data) {
+      return data.keys().hasAll(['name', 'createdAt']) &&
+        data.keys().hasOnly(['name', 'logoUrl', 'websiteUrl', 'createdAt']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+        (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 500)) &&
+        (!('websiteUrl' in data) || (data.websiteUrl is string && data.websiteUrl.size() <= 500)) &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40;
+    }
+
+    // Validation Blueprint: Profile Report
+    function isValidReport(data) {
+      return data.keys().hasAll(['targetUid', 'targetName', 'reason', 'reportedBy', 'createdAt', 'status']) &&
+        data.keys().hasOnly(['targetUid', 'targetName', 'reason', 'reportedBy', 'createdAt', 'status']) &&
+        isValidId(data.targetUid) &&
+        data.targetName is string && data.targetName.size() >= 1 && data.targetName.size() <= 80 &&
+        data.reason is string && data.reason.size() >= 1 && data.reason.size() <= 200 &&
+        isValidId(data.reportedBy) &&
+        data.createdAt is string && data.createdAt.size() >= 10 && data.createdAt.size() <= 40 &&
+        data.status is string && data.status.size() <= 20 && (data.status == 'open' || data.status == 'resolved');
+    }
+
+    // Validation Blueprint: Monthly Reward
+    function isValidReward(data) {
+      return data.keys().hasAll(['month', 'rank', 'rewardName', 'claimed']) &&
+        data.keys().hasOnly(['month', 'rank', 'rewardName', 'claimed']) &&
+        data.month is string && data.month.size() >= 1 && data.month.size() <= 30 &&
+        data.rank is int && data.rank >= 1 && data.rank <= 3 &&
+        data.rewardName is string && data.rewardName.size() >= 1 && data.rewardName.size() <= 140 &&
+        data.claimed is bool;
+    }
+
+    // Validation Blueprint: Site Settings (links, team rows, and contact phone numbers)
+    function isValidSettings(data) {
+      return data.keys().hasAll(['registrationUrl', 'whatsappUrl']) &&
+        data.keys().hasOnly(['registrationUrl', 'whatsappUrl', 'instagramUrl', 'teamMembers', 'contactPhones']) &&
+        data.registrationUrl is string && data.registrationUrl.size() <= 500 &&
+        data.whatsappUrl is string && data.whatsappUrl.size() <= 500 &&
+        (!('instagramUrl' in data) || (data.instagramUrl is string && data.instagramUrl.size() <= 500)) &&
+        (!('teamMembers' in data) || (data.teamMembers is list && data.teamMembers.size() <= 10 && (data.teamMembers.size() == 0 || data.teamMembers[0] is map))) &&
+        (!('contactPhones' in data) || (data.contactPhones is list && data.contactPhones.size() <= 5 && (data.contactPhones.size() == 0 || (data.contactPhones[0] is string && data.contactPhones[0].size() <= 30))));
+    }
+
+    // 1. Users Collection (/users/{uid})
+    match /users/{uid} {
+      allow get: if isSignedIn() && isValidId(uid) && (existing().showPublicly == true || isOwner(uid) || isAdmin());
+      allow list: if isSignedIn() && (existing().showPublicly == true || isOwner(uid) || isAdmin());
+
+      allow create: if isSignedIn() &&
+        isValidId(uid) &&
+        isOwner(uid) &&
+        isValidUser(incoming()) &&
+        incoming().role == 'runner';
+
+      allow update: if isSignedIn() &&
+        isValidId(uid) &&
+        isValidUser(incoming()) &&
+        (isOwner(uid) || isAdmin()) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'bio', 'photoURL', 'bannerURL', 'city', 'showPublicly']) &&
+        incoming().role == existing().role &&
+        incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() && isValidId(uid) && (isOwner(uid) || isAdmin());
+    }
+
+    // 2. Runs Collection (/runs/{id})
+    match /runs/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().km > 0;
+      allow list: if isSignedIn() && existing().km > 0;
+
+      allow create: if isSignedIn() &&
+        isValidId(id) &&
+        isValidRun(incoming()) &&
+        incoming().addedBy == request.auth.uid &&
+        (
+          (incoming().uid == request.auth.uid && incoming().status == 'pending') ||
+          (isAdmin() && exists(/databases/$(database)/documents/users/$(incoming().uid)))
+        );
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidRun(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['uid', 'date', 'km', 'type', 'status', 'durationSeconds', 'flagged', 'flagReason']) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().addedBy == existing().addedBy;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 3. Events Collection (/events/{id}) - Only admins can write (initial seed allowed if not existing)
+    match /events/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().distanceKm > 0;
+      allow list: if isSignedIn() && existing().distanceKm > 0;
+
+      allow create: if isSignedIn() &&
+        isValidId(id) &&
+        isValidEvent(incoming()) &&
+        (
+          isAdmin() ||
+          (id == 'evt_vijay_vilas_turf' && !exists(/databases/$(database)/documents/events/evt_vijay_vilas_turf))
+        );
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidEvent(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'date', 'time', 'venue', 'venueName', 'venueMapUrl', 'bannerUrl',
+          'intro', 'mainRunLabel', 'activities', 'specialMentionTitle', 'specialMentionText',
+          'specialMentionLogoUrl', 'safetyNote', 'feeText', 'featured', 'city',
+          'distanceKm', 'fee', 'perks', 'registrationUrl', 'status', 'description'
+        ]);
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 3b. Collaborations Collection (/collabs/{id}) - Managed by admins (initial seed allowed if not existing)
+    match /collabs/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().order >= 0;
+      allow list: if isSignedIn() && existing().order >= 0;
+
+      allow create: if isSignedIn() &&
+        isValidId(id) &&
+        isValidCollab(incoming()) &&
+        (
+          isAdmin() ||
+          (id == 'collab_vijay_vilas' && !exists(/databases/$(database)/documents/collabs/collab_vijay_vilas))
+        );
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidCollab(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['partnerName', 'logoUrl', 'title', 'line', 'dateLabel', 'link', 'active', 'order']) &&
+        incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 4. Announcements Collection (/announcements/{id}) - Only admins can write
+    match /announcements/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().createdAt >= '';
+      allow list: if isSignedIn() && existing().createdAt >= '';
+
+      allow create: if isSignedIn() && isValidId(id) && isValidAnnouncement(incoming()) && isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidAnnouncement(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['text', 'pinned']) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().createdBy == existing().createdBy;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 5. Voices Collection (/voices/{id}) - Only admins can write
+    match /voices/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().createdAt >= '';
+      allow list: if isSignedIn() && existing().createdAt >= '';
+
+      allow create: if isSignedIn() && isValidId(id) && isValidVoice(incoming()) && isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidVoice(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['quote', 'runnerName', 'tag']) &&
+        incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 6. Memories Collection (/memories/{id}) - Only admins can write
+    match /memories/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().createdAt >= '';
+      allow list: if isSignedIn() && existing().createdAt >= '';
+
+      allow create: if isSignedIn() && isValidId(id) && isValidMemory(incoming()) && isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidMemory(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'date', 'coverPhoto', 'link']) &&
+        incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 7. Partners Collection (/partners/{id}) - Only admins can write
+    match /partners/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().createdAt >= '';
+      allow list: if isSignedIn() && existing().createdAt >= '';
+
+      allow create: if isSignedIn() && isValidId(id) && isValidPartner(incoming()) && isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidPartner(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'logoUrl', 'websiteUrl']) &&
+        incoming().createdAt == existing().createdAt;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 8. Profile Reports Collection (/reports/{id}) - Signed-in users can report; only admins can read/resolve/delete
+    match /reports/{id} {
+      allow get: if isSignedIn() && isValidId(id) && isAdmin() && existing().createdAt >= '';
+      allow list: if isSignedIn() && isAdmin() && existing().createdAt >= '';
+
+      allow create: if isSignedIn() &&
+        isValidId(id) &&
+        isValidReport(incoming()) &&
+        incoming().reportedBy == request.auth.uid &&
+        incoming().status == 'open';
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidReport(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status']) &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().reportedBy == existing().reportedBy;
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 9. Rewards Collection (/rewards/{id}) - Only admins can write
+    match /rewards/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().rank >= 1 && existing().rank <= 3;
+      allow list: if isSignedIn() && existing().rank >= 1 && existing().rank <= 3;
+
+      allow create: if isSignedIn() && isValidId(id) && isValidReward(incoming()) && isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidReward(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['month', 'rank', 'rewardName', 'claimed']);
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+
+    // 10. Site Settings (/settings/{id}) - Only admins can write
+    match /settings/{id} {
+      allow get: if isSignedIn() && isValidId(id) && existing().registrationUrl.size() >= 0;
+      allow list: if isSignedIn() && existing().registrationUrl.size() >= 0;
+
+      allow create: if isSignedIn() && isValidId(id) && isValidSettings(incoming()) && isAdmin();
+
+      allow update: if isSignedIn() &&
+        isValidId(id) &&
+        isValidSettings(incoming()) &&
+        isAdmin() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['registrationUrl', 'whatsappUrl', 'instagramUrl', 'teamMembers', 'contactPhones']);
+
+      allow delete: if isSignedIn() && isValidId(id) && isAdmin();
+    }
+  }
+}

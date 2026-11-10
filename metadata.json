@@ -1,0 +1,6 @@
+{
+  "name": "Rewa FRST Run Club",
+  "description": "Mobile-first running community web application for Rewa FRST Run Club in Rewa, Madhya Pradesh. Track runs, view leaderboards, register for Sunday runs, and claim monthly rewards.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,558 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Public runner profile and role metadata for FRST Run Club members (no PII such as phone or email).",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "Runner display name",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short runner bio (max 120 characters)",
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar photo URL",
+          "maxLength": 1000
+        },
+        "bannerURL": {
+          "type": "string",
+          "description": "Optional profile banner URL",
+          "maxLength": 1000
+        },
+        "city": {
+          "type": "string",
+          "description": "Runner city (defaults to Rewa)",
+          "maxLength": 60
+        },
+        "role": {
+          "type": "string",
+          "description": "Access role ('runner' by default; 'admin' set manually in Firebase console)",
+          "enum": ["runner", "admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when profile was created",
+          "maxLength": 40
+        },
+        "showPublicly": {
+          "type": "boolean",
+          "description": "Whether runner appears on public leaderboard"
+        }
+      },
+      "required": ["displayName", "bio", "photoURL", "role", "createdAt", "showPublicly"]
+    },
+    "Run": {
+      "title": "Run",
+      "description": "A logged or GPS-recorded run entry for a runner (no route coordinates stored)",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "UID of the runner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "description": "Run date in YYYY-MM-DD format",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "km": {
+          "type": "number",
+          "description": "Distance covered in kilometers"
+        },
+        "type": {
+          "type": "string",
+          "description": "Category of run",
+          "enum": ["Club run", "Personal"]
+        },
+        "addedBy": {
+          "type": "string",
+          "description": "UID of user or admin who logged the run",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when entry was created",
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "description": "Approval status of the run",
+          "enum": ["pending", "approved", "rejected"]
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Elapsed running time in seconds"
+        },
+        "flagged": {
+          "type": "boolean",
+          "description": "Flagged if faster than 3:00 min/km or longer than 25 km"
+        },
+        "flagReason": {
+          "type": "string",
+          "description": "Explanation if run is flagged",
+          "maxLength": 120
+        }
+      },
+      "required": ["uid", "date", "km", "type", "addedBy", "createdAt"]
+    },
+    "ClubEvent": {
+      "title": "ClubEvent",
+      "description": "An upcoming, past, or cancelled FRST Run Club event",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Event headline",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "description": "Event date in YYYY-MM-DD format",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "time": {
+          "type": "string",
+          "description": "Start time string e.g. 6:00 AM",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "venue": {
+          "type": "string",
+          "description": "Meeting place in Rewa",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "venueName": {
+          "type": "string",
+          "description": "Full venue display name",
+          "maxLength": 160
+        },
+        "venueMapUrl": {
+          "type": "string",
+          "description": "Optional Google Maps URL for the venue",
+          "maxLength": 500
+        },
+        "bannerUrl": {
+          "type": "string",
+          "description": "Optional event banner image URL",
+          "maxLength": 1000
+        },
+        "intro": {
+          "type": "string",
+          "description": "Short event intro (max 240 characters)",
+          "maxLength": 240
+        },
+        "mainRunLabel": {
+          "type": "string",
+          "description": "Main run label e.g. 3K community run",
+          "maxLength": 100
+        },
+        "activities": {
+          "type": "object",
+          "description": "List of after-run activities (name, detail)"
+        },
+        "specialMentionTitle": {
+          "type": "string",
+          "description": "Special mention card title",
+          "maxLength": 100
+        },
+        "specialMentionText": {
+          "type": "string",
+          "description": "Special mention card text",
+          "maxLength": 300
+        },
+        "specialMentionLogoUrl": {
+          "type": "string",
+          "description": "Optional special mention logo URL",
+          "maxLength": 1000
+        },
+        "safetyNote": {
+          "type": "string",
+          "description": "Optional safety note displayed in a muted box",
+          "maxLength": 300
+        },
+        "feeText": {
+          "type": "string",
+          "description": "Optional fee display string e.g. Free or Rs 199",
+          "maxLength": 100
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether this event is featured as This Sunday on Home"
+        },
+        "city": {
+          "type": "string",
+          "description": "Event city (defaults to Rewa)",
+          "maxLength": 60
+        },
+        "distanceKm": {
+          "type": "number",
+          "description": "Primary event distance in km"
+        },
+        "fee": {
+          "type": "object",
+          "description": "Registration fee tiers in INR"
+        },
+        "perks": {
+          "type": "string",
+          "description": "List of perks included in registration",
+          "maxLength": 80
+        },
+        "registrationUrl": {
+          "type": "string",
+          "description": "External registration form URL",
+          "maxLength": 500
+        },
+        "status": {
+          "type": "string",
+          "description": "Event lifecycle status",
+          "enum": ["upcoming", "past", "cancelled"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Short event description",
+          "maxLength": 500
+        }
+      },
+      "required": ["title", "date", "time", "venue", "distanceKm", "fee", "perks", "registrationUrl"]
+    },
+    "Collab": {
+      "title": "Collab",
+      "description": "Collaboration motion-graphics slide entry shown on the Home page carousel",
+      "type": "object",
+      "properties": {
+        "partnerName": {
+          "type": "string",
+          "description": "Partner brand name",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "Optional partner square logo URL",
+          "maxLength": 1000
+        },
+        "title": {
+          "type": "string",
+          "description": "Collaboration headline e.g. VIJAY VILAS SPORTS X FRST RUN CLUB",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "dateLabel": {
+          "type": "string",
+          "description": "Optional date or schedule chip label e.g. This Sunday",
+          "maxLength": 60
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether collaboration is visible on Home"
+        },
+        "order": {
+          "type": "number",
+          "description": "Display sort order"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when created",
+          "maxLength": 40
+        }
+      },
+      "required": ["partnerName", "title", "active", "order", "createdAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Short club announcement shown at the top of Home (max 200 characters)",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Announcement message",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether announcement is pinned to the top"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when posted",
+          "maxLength": 40
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Admin UID who posted the announcement",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": ["text", "pinned", "createdAt", "createdBy"]
+    },
+    "VoiceQuote": {
+      "title": "VoiceQuote",
+      "description": "Runner quote shown in Voices",
+      "type": "object",
+      "properties": {
+        "quote": {
+          "type": "string",
+          "description": "Short runner quote",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "runnerName": {
+          "type": "string",
+          "description": "Runner display name",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "tag": {
+          "type": "string",
+          "description": "Optional runner tag e.g. Sunday Regular",
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when created",
+          "maxLength": 40
+        }
+      },
+      "required": ["quote", "runnerName", "createdAt"]
+    },
+    "MemoryAlbum": {
+      "title": "MemoryAlbum",
+      "description": "Week-by-week photo album",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Album title",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "description": "Album date (YYYY-MM-DD)",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "coverPhoto": {
+          "type": "string",
+          "description": "Cover photo path or URL",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "link": {
+          "type": "string",
+          "description": "External album link",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when created",
+          "maxLength": 40
+        }
+      },
+      "required": ["title", "date", "coverPhoto", "link", "createdAt"]
+    },
+    "PartnerEntry": {
+      "title": "PartnerEntry",
+      "description": "Club partner name or logo",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Partner brand name",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "Optional logo image URL",
+          "maxLength": 500
+        },
+        "websiteUrl": {
+          "type": "string",
+          "description": "Optional partner link",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when created",
+          "maxLength": 40
+        }
+      },
+      "required": ["name", "createdAt"]
+    },
+    "ProfileReport": {
+      "title": "ProfileReport",
+      "description": "A user-submitted report against a runner profile for admin review",
+      "type": "object",
+      "properties": {
+        "targetUid": {
+          "type": "string",
+          "description": "UID of the reported runner",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "targetName": {
+          "type": "string",
+          "description": "Display name of the reported runner",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for the report",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "reportedBy": {
+          "type": "string",
+          "description": "UID of the user who submitted the report",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp when report was created",
+          "maxLength": 40
+        },
+        "status": {
+          "type": "string",
+          "description": "Review status",
+          "enum": ["open", "resolved"]
+        }
+      },
+      "required": ["targetUid", "targetName", "reason", "reportedBy", "createdAt", "status"]
+    },
+    "Reward": {
+      "title": "Reward",
+      "description": "Monthly top-3 podium reward record",
+      "type": "object",
+      "properties": {
+        "month": {
+          "type": "string",
+          "description": "Month label e.g. 2026-11",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "rank": {
+          "type": "number",
+          "description": "Podium rank 1, 2, or 3"
+        },
+        "rewardName": {
+          "type": "string",
+          "description": "Description of the reward",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "claimed": {
+          "type": "boolean",
+          "description": "Whether the runner has claimed the reward"
+        }
+      },
+      "required": ["month", "rank", "rewardName", "claimed"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Global club settings such as registration, WhatsApp, Instagram URLs, team rows, and contact phone numbers",
+      "type": "object",
+      "properties": {
+        "registrationUrl": {
+          "type": "string",
+          "description": "Default external registration URL",
+          "maxLength": 500
+        },
+        "whatsappUrl": {
+          "type": "string",
+          "description": "WhatsApp group invite URL",
+          "maxLength": 500
+        },
+        "instagramUrl": {
+          "type": "string",
+          "description": "Instagram profile URL",
+          "maxLength": 500
+        },
+        "teamMembers": {
+          "type": "object",
+          "description": "List of team members (name, role, instagramUrl, photoURL)"
+        },
+        "contactPhones": {
+          "type": "string",
+          "description": "List of contact phone numbers",
+          "maxLength": 30
+        }
+      },
+      "required": ["registrationUrl", "whatsappUrl"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Public runner profiles and role assignment"
+    },
+    "/runs/{id}": {
+      "schema": { "$ref": "#/entities/Run" },
+      "description": "Logged and GPS-recorded runs for leaderboard calculation"
+    },
+    "/events/{id}": {
+      "schema": { "$ref": "#/entities/ClubEvent" },
+      "description": "Upcoming, past, and cancelled Sunday runs and events"
+    },
+    "/collabs/{id}": {
+      "schema": { "$ref": "#/entities/Collab" },
+      "description": "Collaboration slides shown on Home and managed by admins"
+    },
+    "/announcements/{id}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Short club announcements shown on Home"
+    },
+    "/voices/{id}": {
+      "schema": { "$ref": "#/entities/VoiceQuote" },
+      "description": "Runner quotes added by admins"
+    },
+    "/memories/{id}": {
+      "schema": { "$ref": "#/entities/MemoryAlbum" },
+      "description": "Week-by-week photo albums added by admins"
+    },
+    "/partners/{id}": {
+      "schema": { "$ref": "#/entities/PartnerEntry" },
+      "description": "Club partners added by admins"
+    },
+    "/reports/{id}": {
+      "schema": { "$ref": "#/entities/ProfileReport" },
+      "description": "Profile reports for admin moderation"
+    },
+    "/rewards/{id}": {
+      "schema": { "$ref": "#/entities/Reward" },
+      "description": "Monthly top-3 runner rewards and claimed status"
+    },
+    "/settings/{id}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Site-wide external links, team rows, and contact phone numbers"
+    }
+  }
+}

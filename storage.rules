@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidImageUpload() {
+      return request.resource != null &&
+        request.resource.size < 1024 * 1024 &&
+        request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // Profile photos and banners: profiles/{uid}/avatar.jpg and profiles/{uid}/banner.jpg
+    match /profiles/{uid}/{fileName} {
+      // Signed-in users can read profile images
+      allow read: if isSignedIn();
+
+      // Only the owner can write their own avatar.jpg or banner.jpg (images under 1 MB only)
+      allow create, update: if isOwner(uid) &&
+        (fileName == 'avatar.jpg' || fileName == 'banner.jpg') &&
+        isValidImageUpload();
+
+      // The owner can delete their own files, and admins can delete any profile image
+      allow delete: if isOwner(uid) || isAdmin();
+    }
+
+    // Collaboration partner logos: collabs/{fileName}
+    match /collabs/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() &&
+        fileName.size() >= 1 &&
+        fileName.size() <= 100 &&
+        isValidImageUpload();
+      allow delete: if isAdmin();
+    }
+  }
+}
